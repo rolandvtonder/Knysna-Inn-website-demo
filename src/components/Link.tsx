@@ -1,16 +1,17 @@
 import type {ComponentPropsWithRef} from 'react';
-import {navigate} from '../lib/router';
+import {navigate, url} from '../lib/router';
 
 type Props = ComponentPropsWithRef<'a'> & {href: string};
 
 /**
  * An in-site link: a real <a href> (so it can be opened in a new tab, copied
  * and crawled) whose plain left-click runs the page wipe instead of a reload.
+ * `href` is a route from the site root ('/rooms'); the served prefix is added here.
  */
 export function Link({href, onClick, ...rest}: Props) {
   return (
     <a
-      href={href}
+      href={url(href)}
       {...rest}
       onClick={(e) => {
         onClick?.(e);

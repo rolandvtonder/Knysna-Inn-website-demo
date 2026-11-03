@@ -14,6 +14,15 @@ export type Phase = 'idle' | 'cover' | 'reveal';
 const COVER_MS = 900;
 const REVEAL_MS = 900;
 
+/**
+ * Where the site is served from: '' at a domain root, or e.g.
+ * '/Knysna-Inn-website-demo' on GitHub Pages. Routes inside the app are
+ * always written from the root ('/rooms'); `url` adds this prefix back.
+ */
+const BASE = import.meta.env.BASE_URL.replace(/\/+$/, '');
+
+export const url = (route: string) => `${BASE}${route}`;
+
 const listeners = new Set<() => void>();
 let path = normalize(window.location.pathname);
 let phase: Phase = 'idle';
@@ -21,7 +30,8 @@ let reduced = false;
 let busy = false;
 
 function normalize(p: string) {
-  const trimmed = p.replace(/\/+$/, '');
+  const local = BASE && p.startsWith(BASE) ? p.slice(BASE.length) : p;
+  const trimmed = local.replace(/\/+$/, '');
   return trimmed === '' ? '/' : trimmed;
 }
 
@@ -53,20 +63,21 @@ function swap(next: string, hash: string) {
   });
 }
 
-/** Navigates to an in-site URL like `/rooms`, `/contact?unit=x` or `/rooms#family-suite`. */
+/** Navigates to an in-site route like `/rooms`, `/contact?unit=x` or `/rooms#family-suite`. */
 export function navigate(href: string, {push = true}: {push?: boolean} = {}) {
-  const url = new URL(href, window.location.origin);
-  const next = normalize(url.pathname);
-  const hash = url.hash.slice(1);
+  const u = new URL(href, window.location.origin);
+  const next = normalize(u.pathname);
+  const hash = u.hash.slice(1);
+  const address = url(next === '/' ? '/' : next) + u.search + u.hash;
 
   if (next === path) {
-    if (push) history.pushState(null, '', url.pathname + url.search + url.hash);
+    if (push) history.pushState(null, '', address);
     if (hash) scrollToId(hash);
     else resetScroll();
     return;
   }
   if (busy) return;
-  if (push) history.pushState(null, '', url.pathname + url.search + url.hash);
+  if (push) history.pushState(null, '', address);
 
   if (reduced) {
     swap(next, hash);
